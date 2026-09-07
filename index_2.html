@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trip RSVP</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trip RSVP">
+<meta name="theme-color" content="#B5792A">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --paper:#F7F2E7; --surface:#FFFFFF; --surface-2:#EFE6D2;
+    --ink:#221C14; --ink-soft:#6B6152; --border:#E1D6BC;
+    --accent:#B5792A; --accent-strong:#8F5D1D; --accent-rgb:181,121,42; --on-accent:#FFFFFF;
+    --teal:#2E6E68; --teal-bg:#E4EEEC; --danger:#A6402F;
+    --shadow: 0 1px 2px rgba(34,28,20,0.06), 0 10px 28px -12px rgba(34,28,20,0.22);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#141210; --surface:#1D1A16; --surface-2:#252019;
+      --ink:#EDE3CF; --ink-soft:#A79A82; --border:#37301F;
+      --accent:#D9A544; --accent-strong:#F0BE63; --accent-rgb:217,165,68; --on-accent:#241B08;
+      --teal:#5FA79E; --teal-bg:#1B2A27; --danger:#E0705C;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -12px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#141210; --surface:#1D1A16; --surface-2:#252019;
+    --ink:#EDE3CF; --ink-soft:#A79A82; --border:#37301F;
+    --accent:#D9A544; --accent-strong:#F0BE63; --accent-rgb:217,165,68; --on-accent:#241B08;
+    --teal:#5FA79E; --teal-bg:#1B2A27; --danger:#E0705C;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -12px rgba(0,0,0,0.6);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 "IBM Plex Sans",-apple-system,sans-serif;text-rendering:optimizeLegibility;}
+  .wrap{max-width:640px;margin:0 auto;padding:36px 20px 80px;}
+  .eyebrow{font:600 11px/1 "IBM Plex Mono",monospace;letter-spacing:0.09em;text-transform:uppercase;color:var(--teal);margin:0 0 10px;}
+  h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(28px,5vw,38px);line-height:1.12;margin:0 0 6px;text-wrap:balance;}
+  .dest{font-size:16px;color:var(--ink-soft);margin:0 0 4px;}
+  .goal{font-size:14.5px;color:var(--ink-soft);margin:14px 0 0;max-width:60ch;}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:26px 0 0;}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow);}
+  .tile-label{font:600 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  .tile-value{font-size:14px;font-weight:600;}
+  .tile-value.live{display:flex;align-items:center;gap:6px;}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0;box-shadow:0 0 0 3px var(--teal-bg);}
+  .panel{margin-top:34px;}
+  .panel-title{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:19px;margin:0 0 12px;}
+  .hint{font-size:13px;color:var(--ink-soft);margin:-4px 0 12px;}
+  .days{display:flex;flex-direction:column;gap:14px;}
+  .day-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);}
+  .day-head{font-weight:700;font-size:13.5px;margin-bottom:8px;color:var(--accent-strong);}
+  .sched-row{display:flex;gap:10px;font-size:13.5px;padding:3px 0;}
+  .sched-time{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-soft);flex-shrink:0;width:78px;}
+  .sched-content{color:var(--ink-soft);}
+  .doc-rows{display:flex;flex-direction:column;gap:8px;}
+  .doc-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;box-shadow:var(--shadow);}
+  .doc-chip{font-size:13.5px;font-weight:600;color:var(--teal);text-decoration:none;}
+  .doc-chip:hover{text-decoration:underline;}
+  .doc-tag{display:inline-block;font:700 10px/1 "IBM Plex Mono",monospace;letter-spacing:0.05em;text-transform:uppercase;background:var(--accent);color:var(--on-accent);border-radius:5px;padding:3px 6px;vertical-align:middle;margin-right:1px;}
+  .doc-check{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-top:8px;color:var(--ink-soft);}
+  .doc-check input:disabled{opacity:0.5;}
+  .doc-links{display:flex;flex-wrap:wrap;gap:8px;}
+  .doc-links .doc-chip{background:var(--teal-bg);border-radius:99px;padding:6px 13px;}
+  .admin-guest-row{display:flex;flex-direction:column;gap:3px;}
+  .admin-guest-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;}
+  .admin-meta{font-size:12.5px;color:var(--ink-soft);}
+  .admin-po-row{font-size:12.5px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);color:var(--ink);}
+  .pack-list{display:flex;flex-direction:column;gap:6px;}
+  .pack-cat{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 14px;}
+  .pack-cat summary{cursor:pointer;font-weight:600;font-size:13.5px;}
+  .pack-count{color:var(--ink-soft);font-weight:400;font-family:"IBM Plex Mono",monospace;font-size:12px;}
+  .pack-cat ul{margin:10px 0 2px;padding-left:20px;font-size:13px;color:var(--ink-soft);columns:2;column-gap:20px;}
+  .rsvp-card{margin-top:40px;background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:24px 22px 22px;box-shadow:var(--shadow);}
+  .rsvp-title{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:22px;margin:0 0 4px;}
+  .rsvp-sub{font-size:13px;color:var(--ink-soft);margin:0 0 22px;}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field.wide{grid-column:1/-1;}
+  .field label{font-size:11px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.04em;}
+  .field input,.field select,.field textarea{font:14px "IBM Plex Sans",sans-serif;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--ink);width:100%;}
+  .field textarea{min-height:60px;resize:vertical;}
+  .plusone-block{border:1px dashed var(--border);border-radius:10px;padding:14px 16px;margin-top:14px;background:var(--surface-2);}
+  .plusone-block h5{margin:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);}
+  .id-block{margin-top:14px;}
+  .id-check{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px;}
+  .id-check input:disabled{opacity:0.45;}
+  .upload-status{font-size:12px;color:var(--ink-soft);margin-top:6px;font-family:"IBM Plex Mono",monospace;}
+  .upload-status.ok{color:var(--teal);}
+  .upload-status.err{color:var(--danger);}
+  .role-access{margin:-6px 0 18px;}
+  .role-access-toggle, .text-link-btn{background:none;border:none;padding:0;font:600 12.5px "IBM Plex Sans",sans-serif;color:var(--ink-soft);text-decoration:underline;text-underline-offset:2px;cursor:pointer;}
+  .role-access-toggle:hover, .text-link-btn:hover{color:var(--accent-strong);}
+  .text-link-btn{display:block;margin-top:12px;}
+  .overlay{position:fixed;inset:0;background:rgba(20,16,10,0.55);display:flex;align-items:flex-start;justify-content:center;padding:8vh 16px;z-index:40;overflow-y:auto;}
+  .overlay-card{background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;max-width:420px;width:100%;padding:24px 22px 22px;box-shadow:var(--shadow);}
+  .role-access-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;}
+  .role-access-form input{font:14px "IBM Plex Sans",sans-serif;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--ink);flex:1;min-width:200px;}
+  .role-access-form .send-btn{margin:0;width:auto;padding:9px 16px;font-size:13px;border-radius:8px;}
+  .role-access-form p.upload-status{width:100%;margin:2px 0 0;}
+  .sign-block{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+  .sign-block .id-check{align-items:flex-start;font-size:12.5px;line-height:1.5;}
+  .sign-block .id-check input{margin-top:2px;flex-shrink:0;}
+  .err{color:var(--danger);font-size:12.5px;font-weight:600;margin:14px 0 0;display:none;}
+  .ok-msg{color:var(--teal);font-size:13px;font-weight:600;margin:14px 0 0;display:none;background:var(--teal-bg);border-radius:8px;padding:10px 12px;}
+  .send-btn{margin-top:18px;width:100%;background:var(--accent);color:var(--on-accent);border:none;border-radius:9px;padding:14px 18px;font:600 15px "IBM Plex Sans",sans-serif;cursor:pointer;transition:opacity .15s ease;}
+  .send-btn:hover{background:var(--accent-strong);}
+  .send-btn:disabled{cursor:not-allowed;}
+  .send-btn.gated{opacity:0.5;}
+  .send-btn.gated.ready{opacity:1;animation:btnGlowPulse 1.8s ease-in-out infinite;}
+  @keyframes btnGlowPulse{
+    0%,100%{ box-shadow:0 0 0 3px rgba(var(--accent-rgb),0.20), 0 0 14px rgba(var(--accent-rgb),0.40); }
+    50%{ box-shadow:0 0 0 6px rgba(var(--accent-rgb),0.32), 0 0 30px rgba(var(--accent-rgb),0.65); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .send-btn.gated.ready{ animation:none; box-shadow:0 0 0 5px rgba(var(--accent-rgb),0.28), 0 0 22px rgba(var(--accent-rgb),0.5); }
+  }
+  .fallback-contact{font-size:12.5px;color:var(--ink-soft);margin:12px 0 0;}
+  .cancel-block{margin-top:22px;border:1px solid var(--border);border-radius:12px;padding:16px 18px;background:var(--surface);}
+  .cancel-block summary{cursor:pointer;font-weight:600;font-size:14px;}
+  .cancel-block .field-grid{margin-top:14px;}
+  .cancel-block .send-btn{background:transparent;color:var(--danger);border:1.5px solid var(--danger);}
+  .cancel-block .send-btn.gated.ready{color:#fff;background:var(--danger);animation:none;box-shadow:none;}
+  .cancel-block .send-btn:hover{background:var(--danger);color:#fff;}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);font-size:13px;font-weight:600;padding:10px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:opacity .18s ease, transform .18s ease;z-index:20;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .state-msg{max-width:640px;margin:80px auto;padding:0 20px;text-align:center;color:var(--ink-soft);font-size:15px;}
+  #home-trip-list a{display:block;text-decoration:none;color:inherit;transition:border-color .12s ease;}
+  #home-trip-list a .tile{padding:14px 16px;}
+  #home-trip-list a:hover .tile{border-color:var(--accent);}
+  [hidden]{display:none !important;}
+  @media (max-width:480px){.field-grid{grid-template-columns:1fr;} .pack-cat ul{columns:1;}}
+</style>
+</head>
+<body>
+
+<div class="state-msg" id="loading-msg">Loading trip details…</div>
+<div class="state-msg" id="notfound-msg" hidden>This invite link isn't active anymore. If you think that's a mistake, reach out to whoever sent it to you.</div>
+
+<div class="wrap" id="auth-gate" hidden>
+  <p class="eyebrow">Your trips</p>
+  <h1>Sign in to continue</h1>
+  <p class="dest">Create an account or sign in to see your trips.</p>
+  <div class="rsvp-card" id="auth-gate-body"></div>
+</div>
+
+<div class="wrap" id="homepage" hidden>
+  <p class="eyebrow">Your trips</p>
+  <h1>Trips with us</h1>
+  <p class="dest" id="home-signed-in-as"></p>
+  <div id="home-trip-list" style="display:flex;flex-direction:column;gap:12px;margin-top:22px;"></div>
+  <p class="hint" id="home-empty" hidden style="margin-top:22px;">No trips on your account yet — if you have an invite link, open it and it'll show up here from then on.</p>
+  <button class="send-btn" type="button" id="home-signout-btn" style="margin-top:28px;max-width:140px;background:transparent;color:var(--ink-soft);border:1.5px solid var(--border);">Sign out</button>
+</div>
+
+<div class="wrap" id="page" hidden>
+  <p class="eyebrow" id="page-eyebrow">Trip invite</p>
+  <h1 id="t-name"></h1>
+  <p class="dest" id="t-dest" hidden></p>
+  <p class="goal" id="t-goal" hidden></p>
+  <div class="tiles" id="t-tiles"></div>
+
+  <div class="role-access" id="role-access-box" hidden>
+    <button type="button" class="role-access-toggle" id="role-access-toggle">Crew or Admin on this trip?</button>
+    <div class="role-access-form" id="role-access-form" hidden>
+      <input type="text" id="role-access-input" placeholder="Phone or email the organizer has on file for you">
+      <button type="button" class="send-btn" id="role-access-submit">Continue</button>
+      <p class="upload-status err" id="role-access-err" hidden>Didn't recognize that — check with the trip organizer.</p>
+    </div>
+  </div>
+
+  <section class="panel" id="t-schedule-panel" hidden>
+    <h2 class="panel-title">Schedule</h2>
+    <div class="days" id="t-days"></div>
+  </section>
+
+  <section class="panel" id="t-docs-panel" hidden>
+    <h2 class="panel-title">Documents to review</h2>
+    <p class="hint" id="t-docs-hint">Open and review each one — if you're RSVPing yes, you'll check them off below.</p>
+    <div class="doc-rows" id="t-docrows"></div>
+  </section>
+
+  <section class="panel" id="t-pack-panel" hidden>
+    <h2 class="panel-title">What to pack</h2>
+    <div class="pack-list" id="t-packlist"></div>
+  </section>
+
+  <div class="rsvp-card">
+    <div id="rsvp-auth-gate" hidden></div>
+    <div id="rsvp-status-view" hidden></div>
+    <div id="rsvp-body" hidden>
+    <h2 class="rsvp-title">RSVP</h2>
+    <p class="rsvp-sub" id="rsvp-sub">Fill this in and hit Send — it's saved instantly. The button lights up once everything required is filled in.</p>
+    <p class="hint" id="cap-note" hidden>This trip has a headcount cap — if it's already full when you submit, you'll be placed on a waitlist and the organizer will follow up if a spot opens.</p>
+
+    <div class="field-grid">
+      <div class="field"><label>Your name *</label><input id="g-name" type="text" autocomplete="name"></div>
+      <div class="field" id="g-role-wrap" hidden><label>Your role on this trip *</label>
+        <select id="g-role"><option value="__unset" selected disabled>Choose one…</option></select>
+      </div>
+      <div class="field"><label>Phone</label><input id="g-phone" type="tel" autocomplete="tel"></div>
+      <div class="field"><label>Email</label><input id="g-email" type="email" autocomplete="email"></div>
+      <div class="field"><label>Gender *</label>
+        <select id="g-gender"><option value="" selected disabled>Choose one…</option><option value="Male">Male</option><option value="Female">Female</option></select>
+      </div>
+      <div class="field"><label>Birthday</label><input id="g-birthday" type="date"></div>
+      <div class="field"><label>Can you make it? *</label>
+        <select id="g-rsvp"><option value=""></option><option value="Yes">Yes</option><option value="Maybe">Maybe</option><option value="No">No</option></select>
+      </div>
+      <div class="field"><label>Allergies / medications</label><input id="g-allergies" type="text"></div>
+      <div class="field wide"><label>Anything else we should know?</label><textarea id="g-notes"></textarea></div>
+    </div>
+
+    <div class="plusone-block id-block" id="g-id-wrap" hidden>
+      <h5>Your ID</h5>
+      <div class="field-grid">
+        <div class="field wide"><label>Legal name as it appears on your ID *</label><input id="g-idname" type="text"></div>
+        <div class="field wide"><label>Upload a photo of your ID (license, state ID, or similar) *</label><input id="g-idfile" type="file" accept="image/*"></div>
+      </div>
+      <p class="upload-status" id="g-idstatus" hidden></p>
+      <label class="id-check"><input type="checkbox" id="g-idphoto" disabled> I confirm this is a current, valid photo ID *</label>
+    </div>
+
+    <div class="plusone-block id-block" id="g-passport-wrap" hidden>
+      <h5>Your passport</h5>
+      <p class="hint" style="margin:0 0 10px;">This trip also requires a passport, in addition to your ID above.</p>
+      <div class="field-grid">
+        <div class="field wide"><label>Upload a photo of your passport *</label><input id="g-passfile" type="file" accept="image/*"></div>
+      </div>
+      <p class="upload-status" id="g-passstatus" hidden></p>
+      <label class="id-check"><input type="checkbox" id="g-passphoto" disabled> I confirm this is a current, valid passport, under the name above *</label>
+    </div>
+
+    <div id="g-po-wrap" style="margin-top:14px;" hidden>
+      <div class="field" style="max-width:220px;"><label>Bringing plus-ones?</label>
+        <select id="g-po-count"></select>
+      </div>
+      <div id="g-po-blocks"></div>
+    </div>
+
+    <div class="sign-block" id="g-sign-block" hidden>
+      <div class="field wide"><label>Printed name (this is your signature) *</label><input id="g-signature" type="text"></div>
+      <label class="id-check"><input type="checkbox" id="g-agree"> By checking this box, I confirm I have read and agree to all of the documents listed above, that all information I've provided here is accurate and true, and that my printed name above is my legal signature. *</label>
+    </div>
+
+    <p class="err" id="g-err"></p>
+    <p class="ok-msg" id="g-ok"></p>
+    <div id="g-invites" hidden style="margin-top:16px;"></div>
+    <button class="send-btn gated" type="button" id="g-send" disabled>Send RSVP</button>
+    <p class="fallback-contact" id="poc-line" hidden></p>
+    </div>
+  </div>
+
+  <details class="cancel-block" id="g-cancel-block">
+    <summary>Already RSVP'd and need to cancel?</summary>
+    <p class="hint" style="margin-top:10px;">Cancelling frees up your spot for someone on the waitlist. Use the same name or email you RSVP'd with so it matches your record.</p>
+    <div class="field-grid">
+      <div class="field"><label>Your name *</label><input id="c-name" type="text"></div>
+      <div class="field"><label>Email (helps us match your RSVP)</label><input id="c-email" type="email"></div>
+    </div>
+    <p class="err" id="c-err"></p>
+    <p class="hint" id="c-blocked" hidden style="color:var(--danger);"></p>
+    <button class="send-btn gated" type="button" id="c-send" disabled>Cancel my RSVP</button>
+  </details>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="pw-recovery-overlay" hidden>
+  <div class="overlay-card">
+    <h2 class="rsvp-title" style="font-size:20px;">Set a new password</h2>
+    <p class="hint" style="margin:0 0 16px;">You followed a password reset link — choose a new password to finish signing in.</p>
+    <div class="field-grid">
+      <div class="field wide"><label>New password *</label><input id="pwr-password" type="password" autocomplete="new-password"></div>
+      <div class="field wide"><label>Confirm new password *</label><input id="pwr-confirm" type="password" autocomplete="new-password"></div>
+    </div>
+    <p class="err" id="pwr-err"></p>
+    <button class="send-btn always-enabled" type="button" id="pwr-save">Save new password</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var SUPABASE_URL = "https://csgmcscnorpywngbpaas.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_U1GfAR2gZeY9f7Tq758g3g_e9mY2poH";
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var params = new URLSearchParams(window.location.search);
+  var TRIP_ID = params.get('trip') || '';
+  var PO_TOKEN = params.get('po') || '';
+  var RELATIONSHIPS = ["", "Friend", "Family", "Partner", "Colleague", "Other"];
+  var trip = null;
+  var docOpened = {};   // title -> true once the guest has clicked the link
+  var docAcked = {};    // title -> true once the guest has checked "I've read this"
+
+  // ---- accounts: real login (email+password), so an RSVP and any later
+  // role request are tied to a person, not just whatever they typed that
+  // day. Plus-one links (?po=) and the legacy admin phone/email backdoor
+  // stay account-free — unchanged.
+  var CURRENT_ACCOUNT_ID = null;
+  var CURRENT_EMAIL = '';
+  var MY_GUEST_RECORD = null;
+
+  // ---- forgot password: Supabase signs the visitor into a temporary
+  // session the moment they follow the emailed reset link (the link
+  // carries a recovery token in the URL) and fires this event — catch it
+  // globally, on whichever page they land back on, and make them set a
+  // new password before anything else. The rest of the page's normal
+  // sign-in detection still runs underneath (that temporary session is a
+  // real one), so once they close this they're already looking at their
+  // trip/account, no second sign-in needed.
+  sb.auth.onAuthStateChange(function(event){
+    if(event === 'PASSWORD_RECOVERY') showPasswordRecoveryOverlay();
+  });
+  function showPasswordRecoveryOverlay(){
+    var overlay = document.getElementById('pw-recovery-overlay');
+    if(!overlay) return;
+    overlay.hidden = false;
+    var pwEl = overlay.querySelector('#pwr-password');
+    var confirmEl = overlay.querySelector('#pwr-confirm');
+    var errEl = overlay.querySelector('#pwr-err');
+    var saveBtn = overlay.querySelector('#pwr-save');
+    saveBtn.onclick = function(){
+      var pw = pwEl.value, confirm = confirmEl.value;
+      errEl.style.display = 'none';
+      if(!pw || pw.length < 6){ errEl.textContent = 'Password should be at least 6 characters.'; errEl.style.display = 'block'; return; }
+      if(pw !== confirm){ errEl.textContent = "Those passwords don't match."; errEl.style.display = 'block'; return; }
+      saveBtn.disabled = true;
+      sb.auth.updateUser({ password: pw }).then(function(res){
+        saveBtn.disabled = false;
+        if(res.error){ errEl.textContent = res.error.message || "Couldn't update your password."; errEl.style.display = 'block'; return; }
+        overlay.hidden = true;
+        pwEl.value = ''; confirmEl.value = '';
+        showToast("Password updated — you're signed in.");
+      }).catch(function(){ saveBtn.disabled = false; errEl.textContent = 'Something went wrong — try again.'; errEl.style.display = 'block'; });
+    };
+    [pwEl, confirmEl].forEach(function(el){
+      el.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); saveBtn.click(); } });
+    });
+  }
+
+  function esc(s){
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+  function fmtDate(iso){
+    if(!iso) return '';
+    try{
+      var d = new Date(iso + 'T00:00:00');
+      if(isNaN(d.getTime())) return iso;
+      return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    }catch(e){ return iso; }
+  }
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+  function uuid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+      var r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8); return v.toString(16);
+    });
+  }
+
+  // ---- accounts: email+password sign in / sign up, rendered into
+  // whichever container needs it (the homepage gate or the inline RSVP
+  // gate). Best-effort: if the account's existing guest rows haven't been
+  // linked yet (e.g. they RSVP'd before creating an account), link them
+  // right after signing in.
+  function afterAuthed(session){
+    CURRENT_ACCOUNT_ID = session.user.id;
+    CURRENT_EMAIL = session.user.email || '';
+    sb.rpc('link_my_guest_records', {}).catch(function(){});
+  }
+  function buildAuthForm(container, opts){
+    opts = opts || {};
+    var p = opts.prefix || 'auth';
+    // A trip's signup requires that trip's password (set by the organizer,
+    // shared separately from the link) — see the "Trip password" field in
+    // Waypoint. Signing in to an already-linked account never needs it, and
+    // the cross-trip homepage never offers signup at all (opts.hideSignup).
+    var passcodeField = opts.requirePasscode
+      ? '<div class="field wide"><label>Trip password (to create an account) *</label><input id="' + p + '-passcode" type="text" autocomplete="off"></div>'
+      : '';
+    var signupBtnHtml = opts.hideSignup ? '' :
+      '<button class="send-btn" type="button" id="' + p + '-signup" style="margin-top:0;flex:1;min-width:140px;background:transparent;color:var(--accent-strong);border:1.5px solid var(--accent);">Create account</button>';
+    container.innerHTML =
+      '<p class="hint" style="margin:0 0 14px;">' + esc(opts.hint || 'Sign in or create an account — takes a few seconds, and it\'s just email + password.') + '</p>' +
+      '<div class="field-grid">' +
+        '<div class="field wide"><label>Email *</label><input id="' + p + '-email" type="email" autocomplete="email"></div>' +
+        '<div class="field wide"><label>Password *</label><input id="' + p + '-password" type="password" autocomplete="current-password"></div>' +
+        passcodeField +
+      '</div>' +
+      '<p class="err" id="' + p + '-err"></p>' +
+      '<p class="ok-msg" id="' + p + '-ok"></p>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">' +
+        '<button class="send-btn" type="button" id="' + p + '-signin" style="margin-top:0;flex:1;min-width:140px;">Sign in</button>' +
+        signupBtnHtml +
+      '</div>' +
+      '<button type="button" class="text-link-btn" id="' + p + '-forgot">Forgot password?</button>';
+    var emailEl = container.querySelector('#' + p + '-email');
+    var passEl = container.querySelector('#' + p + '-password');
+    var passcodeEl = container.querySelector('#' + p + '-passcode');
+    var errEl = container.querySelector('#' + p + '-err');
+    var okEl = container.querySelector('#' + p + '-ok');
+    var forgotBtn = container.querySelector('#' + p + '-forgot');
+    var signinBtn = container.querySelector('#' + p + '-signin');
+    var signupBtn = container.querySelector('#' + p + '-signup');
+    function showErr(msg){ errEl.textContent = msg; errEl.style.display = 'block'; okEl.style.display = 'none'; }
+    function showOk(msg){ okEl.textContent = msg; okEl.style.display = 'block'; errEl.style.display = 'none'; }
+    function busy(b){ signinBtn.disabled = b; if(signupBtn) signupBtn.disabled = b; }
+    signinBtn.addEventListener('click', function(){
+      var email = emailEl.value.trim(), pw = passEl.value;
+      if(!email || !pw){ showErr('Enter your email and password.'); return; }
+      errEl.style.display = 'none'; busy(true);
+      sb.auth.signInWithPassword({ email: email, password: pw }).then(function(res){
+        busy(false);
+        if(res.error){ showErr(res.error.message || "Couldn't sign in — check your email and password."); return; }
+        if(opts.onSuccess) opts.onSuccess(res.data.session);
+      }).catch(function(){ busy(false); showErr('Something went wrong — try again.'); });
+    });
+    if(signupBtn){
+      signupBtn.addEventListener('click', function(){
+        var email = emailEl.value.trim(), pw = passEl.value;
+        if(!email || !pw){ showErr('Enter an email and password.'); return; }
+        if(pw.length < 6){ showErr('Password should be at least 6 characters.'); return; }
+        var code = opts.requirePasscode && passcodeEl ? passcodeEl.value.trim() : '';
+        if(opts.requirePasscode && !code){ showErr('Enter the trip password whoever invited you gave you.'); return; }
+        errEl.style.display = 'none'; busy(true);
+        var finishSignup = function(){
+          sb.auth.signUp({ email: email, password: pw }).then(function(res){
+            busy(false);
+            if(res.error){ showErr(res.error.message || "Couldn't create that account."); return; }
+            if(res.data && res.data.session){
+              if(opts.onSuccess) opts.onSuccess(res.data.session);
+            } else {
+              showOk("Account created — check your email to confirm it, then come back and sign in.");
+            }
+          }).catch(function(){ busy(false); showErr('Something went wrong — try again.'); });
+        };
+        if(opts.requirePasscode){
+          sb.rpc('verify_trip_passcode', { p_trip_id: opts.tripId, p_passcode: code }).then(function(vres){
+            if(vres.error || !vres.data || !vres.data.ok){
+              busy(false);
+              showErr("That trip password doesn't match — check with whoever invited you.");
+              return;
+            }
+            finishSignup();
+          }).catch(function(){ busy(false); showErr('Something went wrong — try again.'); });
+        } else {
+          finishSignup();
+        }
+      });
+    }
+    forgotBtn.addEventListener('click', function(){
+      var email = emailEl.value.trim();
+      if(!email){ showErr('Enter your email above, then click "Forgot password?" again.'); return; }
+      errEl.style.display = 'none'; forgotBtn.disabled = true;
+      var redirectTo = window.location.origin + window.location.pathname + window.location.search;
+      sb.auth.resetPasswordForEmail(email, { redirectTo: redirectTo }).then(function(res){
+        forgotBtn.disabled = false;
+        if(res.error){ showErr(res.error.message || "Couldn't send that — try again."); return; }
+        showOk("If an account exists for that email, we've sent a link to reset the password — check the inbox (and spam folder).");
+      }).catch(function(){ forgotBtn.disabled = false; showErr('Something went wrong — try again.'); });
+    });
+    [emailEl, passEl].forEach(function(el){
+      el.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); signinBtn.click(); } });
+    });
+  }
+
+  // ---- documents: filtered by role, view-then-check gated ----
+  function currentRole(){
+    var sel = document.getElementById('g-role');
+    return (sel && !sel.closest('[hidden]')) ? sel.value : '';
+  }
+  function docVisible(d){
+    var aud = (d.audience || '').trim();
+    if(!aud || aud === 'all') return true;
+    var roles = (trip && trip.guest_roles) || [];
+    if(roles.indexOf(aud) === -1) return true; // unknown/stale role tag: fail open, don't hide a doc
+    return aud === currentRole();
+  }
+  function docTypeLabel(d){
+    var dt = (d.docType || '').toLowerCase();
+    if(dt === 'nda') return 'NDA';
+    if(dt === 'waiver') return 'Trip Waiver';
+    if(dt) return null; // explicitly tagged as something else: no badge
+    // older documents saved before document types existed — guess from the title
+    if(/nda|non-disclosure/i.test(d.title)) return 'NDA';
+    if(/waiver/i.test(d.title)) return 'Trip Waiver';
+    return null;
+  }
+  function renderDocs(){
+    if(!trip) return;
+    var isYes = document.getElementById('g-rsvp').value === 'Yes';
+    var docs = (trip.documents || []).filter(function(d){ return d.title && docVisible(d); });
+    var panel = document.getElementById('t-docs-panel');
+    var hint = document.getElementById('t-docs-hint');
+    if(!docs.length){ panel.hidden = true; renderDocs._visibleTitles = []; return; }
+    panel.hidden = false;
+    renderDocs._visibleTitles = docs.map(function(d){ return d.title; });
+
+    if(!isYes){
+      hint.textContent = 'Take a look before you RSVP.';
+      document.getElementById('t-docrows').innerHTML =
+        '<div class="doc-links">' + docs.filter(function(d){ return d.url; }).map(function(d){
+          var tag = docTypeLabel(d);
+          var tagHtml = tag ? '<span class="doc-tag">' + esc(tag) + '</span> ' : '';
+          return '<a class="doc-chip" href="' + esc(d.url) + '" target="_blank" rel="noopener">' + tagHtml + esc(d.title) + ' ↗</a>';
+        }).join('') + '</div>';
+      return;
+    }
+    var roleWrap = document.getElementById('g-role-wrap');
+    var roleUnset = !roleWrap.hidden && document.getElementById('g-role').value === '__unset';
+    if(roleUnset){
+      hint.textContent = "Choose your role above first — that decides which of these apply to you.";
+    } else {
+      hint.textContent = "Open each one, then check it off — the box unlocks once you've clicked the link.";
+    }
+    var rows = docs.map(function(d){
+      var tag = docTypeLabel(d);
+      var tagHtml = tag ? '<span class="doc-tag">' + esc(tag) + '</span> ' : '';
+      var opened = !!docOpened[d.title];
+      var acked = !!docAcked[d.title];
+      var linkHtml = d.url
+        ? '<a class="doc-chip" href="' + esc(d.url) + '" target="_blank" rel="noopener" data-doc-link="' + esc(d.title) + '">' + tagHtml + esc(d.title) + ' ↗</a>'
+        : '<span class="doc-chip">' + tagHtml + esc(d.title) + '</span>';
+      return '<div class="doc-row">' + linkHtml +
+        '<label class="doc-check"><input type="checkbox" class="doc-ack" data-doc-ack="' + esc(d.title) + '" ' + (opened?'':'disabled') + ' ' + (acked?'checked':'') + '> Read and agree *</label>' +
+        '</div>';
+    }).join('');
+    document.getElementById('t-docrows').innerHTML = rows;
+  }
+  document.getElementById('t-docrows').addEventListener('click', function(e){
+    var link = e.target.closest('[data-doc-link]');
+    if(!link) return;
+    var title = link.getAttribute('data-doc-link');
+    docOpened[title] = true;
+    var cb = document.querySelector('[data-doc-ack="' + CSS.escape(title) + '"]');
+    if(cb) cb.disabled = false;
+  });
+  document.getElementById('t-docrows').addEventListener('change', function(e){
+    var cb = e.target.closest('[data-doc-ack]');
+    if(!cb) return;
+    docAcked[cb.getAttribute('data-doc-ack')] = cb.checked;
+    updateReady();
+  });
+
+  function renderTrip(t){
+    trip = t;
+    document.title = (t.name || 'Trip') + ' — RSVP';
+    document.getElementById('t-name').textContent = t.name || 'Untitled Trip';
+    document.getElementById('role-access-box').hidden = false;
+    if(t.destination){ document.getElementById('t-dest').textContent = t.destination; document.getElementById('t-dest').hidden = false; }
+    if(t.goal){ document.getElementById('t-goal').textContent = t.goal; document.getElementById('t-goal').hidden = false; }
+
+    var dateRange = fmtDate(t.start_date);
+    if(t.end_date && t.end_date !== t.start_date) dateRange += ' – ' + fmtDate(t.end_date);
+
+    var tiles = [];
+    if(dateRange) tiles.push(['Dates', esc(dateRange)]);
+    if(t.rsvp_deadline) tiles.push(['RSVP by', esc(fmtDate(t.rsvp_deadline))]);
+    if(t.meeting_point) tiles.push(['Meeting point', esc(t.meeting_point)]);
+    if(t.poc){
+      var contact = esc(t.poc) + (t.poc_phone ? ' · ' + esc(t.poc_phone) : '');
+      tiles.push(['Point of contact', contact]);
+    }
+    if(t.headcount_cap){
+      var cap = t.headcount_cap;
+      var filled = t.filled || 0;
+      var left = Math.max(0, cap - filled);
+      var val = '<span class="tile-value live"><span class="live-dot"></span>' + filled + ' of ' + cap + ' spots filled</span>';
+      tiles.push(['Headcount', val, true]);
+      if(t.full){
+        tiles.push(['Status', '<span style="color:var(--danger);">Full — new RSVPs join the waitlist</span>', true]);
+      } else if(left <= 2){
+        tiles.push(['Status', esc(left) + ' spot' + (left===1?'':'s') + ' left', false]);
+      }
+    }
+    if(t.plus_one_cap > 0) tiles.push(['Plus-ones allowed', 'Up to ' + t.plus_one_cap + ' per guest']);
+    if(t.expected_amount){
+      var val = '<span class="tile-value live"><span class="live-dot"></span>~$' + Number(t.expected_amount).toLocaleString() + '</span>';
+      tiles.push(['Bring (personal spend)', val, true]);
+    }
+
+    var tilesHtml = tiles.map(function(row){
+      var raw = row[2];
+      var value = raw ? row[1] : '<span class="tile-value">' + row[1] + '</span>';
+      return '<div class="tile"><div class="tile-label">' + esc(row[0]) + '</div>' + value + '</div>';
+    }).join('');
+    document.getElementById('t-tiles').innerHTML = tilesHtml;
+
+    var days = (t.days || []).filter(function(d){
+      return d.date || d.goal || (d.schedule||[]).some(function(s){ return s.time || s.activity; });
+    });
+    if(days.length){
+      var dayBlocks = days.map(function(d, i){
+        var rows = (d.schedule||[]).filter(function(s){ return s.time || s.activity; }).map(function(s){
+          var content = s.content ? '<span class="sched-content"> — ' + esc(s.content) + '</span>' : '';
+          return '<div class="sched-row"><span class="sched-time">' + esc(s.time||'—') + '</span><span class="sched-activity">' + esc(s.activity||'') + content + '</span></div>';
+        }).join('');
+        var head = 'Day ' + (i+1) + (d.date ? ' — ' + esc(fmtDate(d.date)) : '') + (d.goal ? ' · ' + esc(d.goal) : '');
+        return '<div class="day-block"><div class="day-head">' + head + '</div>' + rows + '</div>';
+      }).join('');
+      document.getElementById('t-days').innerHTML = dayBlocks;
+      document.getElementById('t-schedule-panel').hidden = false;
+    }
+
+    // role selector (only when the organizer has defined crew roles) — a
+    // real choice, not a silent default, since which role you pick decides
+    // which documents (NDAs and anything else) and ID requirements apply.
+    var roles = (t.guest_roles || []).filter(Boolean);
+    var roleSel = document.getElementById('g-role');
+    var roleWrap = document.getElementById('g-role-wrap');
+    if(roles.length){
+      roleSel.innerHTML = '<option value="__unset" selected disabled>Choose one…</option><option value="">Guest</option>' +
+        roles.map(function(r){ return '<option value="' + esc(r) + '">' + esc(r) + '</option>'; }).join('');
+      roleWrap.hidden = false;
+    } else {
+      roleWrap.hidden = true;
+    }
+
+    var packing = t.packing_categories || [];
+    if(packing.length){
+      var cats = packing.map(function(c){
+        var items = (c.items||[]).map(function(i){ return '<li>' + esc(i) + '</li>'; }).join('');
+        return '<details class="pack-cat"><summary>' + esc(c.title) + ' <span class="pack-count">(' + (c.items||[]).length + ')</span></summary><ul>' + items + '</ul></details>';
+      }).join('');
+      document.getElementById('t-packlist').innerHTML = cats;
+      document.getElementById('t-pack-panel').hidden = false;
+    }
+
+    if(t.headcount_cap) document.getElementById('cap-note').hidden = false;
+    if(t.poc || t.poc_phone){
+      var pocLine = document.getElementById('poc-line');
+      pocLine.textContent = 'Prefer to just text or call? Reach ' + [t.poc, t.poc_phone].filter(Boolean).join(' · ') + ' directly.';
+      pocLine.hidden = false;
+    }
+
+    // plus-one selector
+    var poCountSel = document.getElementById('g-po-count');
+    var poCap = t.plus_one_cap || 0;
+    if(poCap > 0){
+      var opts = '';
+      for(var i=0;i<=poCap;i++){ opts += '<option value="' + i + '">' + (i===0?'No':i) + '</option>'; }
+      poCountSel.innerHTML = opts;
+      document.getElementById('g-po-wrap').hidden = false;
+    }
+
+    renderDocs();
+    document.getElementById('loading-msg').hidden = true;
+    document.getElementById('page').hidden = false;
+    initRsvpAuthArea();
+    // Silently check for Crew/Admin/Owner access, only after the sign-in
+    // gate above has already passed. Prefer whatever identifier this
+    // browser previously unlocked it with (a phone number, say); otherwise
+    // try the signed-in account's own email automatically — so if the
+    // organizer added you by your email, signing in with that email is
+    // all it takes, no separate code to type in.
+    var savedRoleId = '';
+    if(ROLE_ACCESS_KEY){ try{ savedRoleId = localStorage.getItem(ROLE_ACCESS_KEY) || ''; }catch(e){} }
+    var autoIdentifier = savedRoleId || CURRENT_EMAIL;
+    if(autoIdentifier){ tryRoleAccess(autoIdentifier, { fallback: function(){} }); }
+  }
+
+  // ---- Accounts on the trip page: the RSVP card itself is gated behind
+  // sign-in/sign-up (trip logistics above stay visible to anyone with the
+  // link, same as before). Once signed in, a returning guest sees their
+  // status instead of a blank form; a first-time guest sees the normal
+  // RSVP form, now tied to their account. ----
+  function initRsvpAuthArea(){
+    sb.auth.getSession().then(function(res){
+      var session = res.data && res.data.session;
+      if(!session){ showRsvpAuthGate(); return; }
+      afterAuthed(session);
+      checkExistingRsvpAndReveal();
+    }).catch(function(){ showRsvpAuthGate(); });
+  }
+  function showRsvpAuthGate(){
+    document.getElementById('rsvp-body').hidden = true;
+    document.getElementById('rsvp-status-view').hidden = true;
+    var gate = document.getElementById('rsvp-auth-gate');
+    gate.hidden = false;
+    buildAuthForm(gate, {
+      prefix: 'rsvp-auth',
+      hint: "Sign in or create an account to RSVP — this ties it to you, so if you ever need a different role later, you can request it instead of just re-picking.",
+      onSuccess: function(session){
+        afterAuthed(session);
+        gate.hidden = true;
+        checkExistingRsvpAndReveal();
+      }
+    });
+  }
+  function checkExistingRsvpAndReveal(){
+    sb.rpc('get_my_trip_record', { p_trip_id: TRIP_ID }).then(function(res){
+      if(!res.error && res.data && res.data.ok && res.data.found){
+        MY_GUEST_RECORD = res.data.guest;
+        renderRsvpStatusView(MY_GUEST_RECORD);
+      } else {
+        document.getElementById('rsvp-status-view').hidden = true;
+        document.getElementById('rsvp-body').hidden = false;
+      }
+    }).catch(function(){ document.getElementById('rsvp-body').hidden = false; });
+  }
+  function requestRoleLabel(status){
+    if(status === 'confirmed') return "You're confirmed! See you there.";
+    if(status === 'standby') return "You're on the waitlist — the organizer will reach out if a spot opens.";
+    if(status === 'declined') return "Got it — you let us know you can't make it.";
+    return "Your RSVP is on file.";
+  }
+  function renderRsvpStatusView(guest){
+    document.getElementById('rsvp-body').hidden = true;
+    var el = document.getElementById('rsvp-status-view');
+    var roles = ((trip && trip.guest_roles) || []).filter(Boolean);
+    var roleOptionsHtml = '<option value="">Guest</option>' + roles.map(function(r){
+      return '<option value="' + esc(r) + '"' + (r === guest.role ? ' selected' : '') + '>' + esc(r) + '</option>';
+    }).join('');
+    var pendingHtml = guest.pending_role_request !== undefined && guest.pending_role_request !== null
+      ? '<p class="hint" style="margin:10px 0 0;">Request pending: <strong>' + esc(guest.pending_role_request || 'Guest') + '</strong> — waiting on the organizer.</p>'
+      : '';
+    el.innerHTML =
+      '<h2 class="rsvp-title" style="font-size:19px;">' + esc(requestRoleLabel(guest.status)) + '</h2>' +
+      '<p class="hint" style="margin:0 0 16px;">Signed in as ' + esc(CURRENT_EMAIL) + (guest.role ? ' · Role: ' + esc(guest.role) : '') + '</p>' +
+      (roles.length ? (
+        '<div class="field wide" style="max-width:280px;"><label>Your role</label><select id="role-req-select">' + roleOptionsHtml + '</select></div>' +
+        '<button class="send-btn" type="button" id="role-req-btn" style="max-width:220px;">' + (guest.role_set ? 'Request role change' : 'Set role') + '</button>' +
+        '<p class="err" id="role-req-err"></p>' +
+        pendingHtml
+      ) : '') +
+      '<button type="button" id="edit-info-toggle" class="send-btn" style="margin-top:18px;max-width:220px;background:transparent;color:var(--accent-strong);border:1.5px solid var(--accent);">Edit your info</button>' +
+      '<div id="edit-info-body" hidden style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">' +
+        '<div class="field-grid">' +
+          '<div class="field wide"><label>Your name *</label><input id="ei-name" type="text" value="' + esc(guest.name || '') + '"></div>' +
+          '<div class="field"><label>Phone</label><input id="ei-phone" type="tel" value="' + esc(guest.phone || '') + '"></div>' +
+          '<div class="field"><label>Email</label><input id="ei-email" type="email" value="' + esc(guest.email || '') + '"></div>' +
+          '<div class="field"><label>Gender</label><select id="ei-gender">' +
+            '<option value=""' + (!guest.gender ? ' selected' : '') + '>Prefer not to say</option>' +
+            '<option value="Male"' + (guest.gender === 'Male' ? ' selected' : '') + '>Male</option>' +
+            '<option value="Female"' + (guest.gender === 'Female' ? ' selected' : '') + '>Female</option>' +
+          '</select></div>' +
+          '<div class="field"><label>Birthday</label><input id="ei-birthday" type="date" value="' + esc(guest.birthday || '') + '"></div>' +
+          '<div class="field wide"><label>Allergies / medications</label><input id="ei-allergies" type="text" value="' + esc(guest.allergies || '') + '"></div>' +
+          '<div class="field wide"><label>Anything else we should know?</label><textarea id="ei-notes">' + esc(guest.notes || '') + '</textarea></div>' +
+        '</div>' +
+        '<p class="err" id="ei-err"></p>' +
+        '<button class="send-btn always-enabled" type="button" id="ei-save" style="max-width:180px;margin-top:6px;">Save changes</button>' +
+      '</div>' +
+      '<div id="acct-panel" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;"></div>';
+    el.hidden = false;
+    buildAccountSettingsBlock(el.querySelector('#acct-panel'));
+    var btn = el.querySelector('#role-req-btn');
+    if(btn){
+      btn.addEventListener('click', function(){
+        var sel = el.querySelector('#role-req-select');
+        btn.disabled = true;
+        sb.rpc('request_role_change', { p_trip_id: TRIP_ID, p_requested_role: sel.value }).then(function(res){
+          btn.disabled = false;
+          if(res.error || !res.data || !res.data.ok){
+            var msg = (res.data && res.data.error === 'invalid_role') ? "That role isn't set up on this trip." : "Couldn't send that — try again.";
+            showToast(msg);
+            return;
+          }
+          if(res.data.status === 'applied'){
+            guest.role = sel.value; guest.role_set = true; guest.pending_role_request = null;
+            showToast('Role set'); renderRsvpStatusView(guest);
+          } else if(res.data.status === 'pending'){
+            guest.pending_role_request = sel.value;
+            showToast('Sent — the organizer will review it'); renderRsvpStatusView(guest);
+          } else {
+            showToast('No change');
+          }
+        }).catch(function(){ btn.disabled = false; showToast('Something went wrong — try again.'); });
+      });
+    }
+    // ---- Edit your info: a signed-in guest can update their own basics
+    // (name, phone, email, gender, birthday, allergies, notes) any time —
+    // scoped server-side to their own account_id, same as the role request. ----
+    var editToggle = el.querySelector('#edit-info-toggle');
+    var editBody = el.querySelector('#edit-info-body');
+    editToggle.addEventListener('click', function(){
+      editBody.hidden = !editBody.hidden;
+      editToggle.textContent = editBody.hidden ? 'Edit your info' : 'Hide';
+    });
+    var saveBtn = el.querySelector('#ei-save');
+    var eiErr = el.querySelector('#ei-err');
+    saveBtn.addEventListener('click', function(){
+      var name = el.querySelector('#ei-name').value.trim();
+      if(!name){ eiErr.textContent = 'Name is required.'; eiErr.style.display = 'block'; return; }
+      eiErr.style.display = 'none';
+      saveBtn.disabled = true;
+      sb.rpc('update_my_info', {
+        p_trip_id: TRIP_ID,
+        p_name: name,
+        p_phone: el.querySelector('#ei-phone').value.trim(),
+        p_email: el.querySelector('#ei-email').value.trim(),
+        p_allergies: el.querySelector('#ei-allergies').value.trim(),
+        p_notes: el.querySelector('#ei-notes').value.trim(),
+        p_gender: el.querySelector('#ei-gender').value,
+        p_birthday: el.querySelector('#ei-birthday').value || null
+      }).then(function(res){
+        saveBtn.disabled = false;
+        if(res.error || !res.data || !res.data.ok){
+          eiErr.textContent = "Couldn't save that — try again.";
+          eiErr.style.display = 'block';
+          return;
+        }
+        guest.name = name;
+        guest.phone = el.querySelector('#ei-phone').value.trim();
+        guest.email = el.querySelector('#ei-email').value.trim();
+        guest.allergies = el.querySelector('#ei-allergies').value.trim();
+        guest.notes = el.querySelector('#ei-notes').value.trim();
+        guest.gender = el.querySelector('#ei-gender').value;
+        guest.birthday = el.querySelector('#ei-birthday').value;
+        showToast('Info updated');
+        renderRsvpStatusView(guest);
+      }).catch(function(){ saveBtn.disabled = false; eiErr.textContent = 'Something went wrong — try again.'; eiErr.style.display = 'block'; });
+    });
+  }
+
+  // ---- Homepage: a bare visit (no invite link) shows only trips this
+  // account is already tied to — never a directory of every trip. ----
+  function renderHomepage(){
+    document.getElementById('loading-msg').hidden = true;
+    document.getElementById('auth-gate').hidden = true;
+    document.getElementById('homepage').hidden = false;
+    document.getElementById('home-signed-in-as').textContent = CURRENT_EMAIL ? ('Signed in as ' + CURRENT_EMAIL) : '';
+    sb.rpc('get_my_trips', {}).then(function(res){
+      var list = document.getElementById('home-trip-list');
+      var empty = document.getElementById('home-empty');
+      if(res.error || !res.data || !res.data.ok){ list.innerHTML = ''; empty.hidden = false; return; }
+      var trips = res.data.trips || [];
+      if(!trips.length){ list.innerHTML = ''; empty.hidden = false; return; }
+      empty.hidden = true;
+      list.innerHTML = trips.map(function(t){
+        var dateRange = fmtDate(t.start_date) + (t.end_date && t.end_date !== t.start_date ? ' – ' + fmtDate(t.end_date) : '');
+        var statusTxt = t.is_completed ? 'Completed' : (t.my_status === 'standby' ? 'Waitlisted' : (t.my_rsvp || 'Not answered yet'));
+        var url = window.location.origin + window.location.pathname + '?trip=' + encodeURIComponent(t.trip_id);
+        return '<a href="' + esc(url) + '">' +
+          '<div class="tile">' +
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;">' +
+              '<strong style="font-size:15px;">' + esc(t.name || 'Untitled Trip') + '</strong>' +
+              '<span class="doc-tag" style="background:' + (t.is_completed ? 'var(--ink-soft)' : 'var(--teal)') + ';">' + esc(statusTxt) + '</span>' +
+            '</div>' +
+            (t.destination ? '<div class="admin-meta" style="margin-top:4px;">' + esc(t.destination) + '</div>' : '') +
+            (dateRange.trim() ? '<div class="admin-meta">' + esc(dateRange) + '</div>' : '') +
+          '</div>' +
+        '</a>';
+      }).join('');
+    }).catch(function(){ document.getElementById('home-empty').hidden = false; });
+    var signout = document.getElementById('home-signout-btn');
+    if(signout && !signout._wired){
+      signout._wired = true;
+      signout.addEventListener('click', function(){
+        sb.auth.signOut().then(function(){ window.location.reload(); });
+      });
+    }
+  }
+
+  // ---- ID upload helper (shared by the main guest and each plus-one) ----
+  function wireIdUpload(fileInput, statusEl, checkbox, getPath, setPath){
+    fileInput.addEventListener('change', function(){
+      var file = fileInput.files && fileInput.files[0];
+      checkbox.checked = false;
+      checkbox.disabled = true;
+      setPath(null);
+      updateReady();
+      if(!file) { statusEl.hidden = true; return; }
+      statusEl.hidden = false;
+      statusEl.className = 'upload-status';
+      statusEl.textContent = 'Uploading…';
+      var path = TRIP_ID + '/' + uuid() + '/' + file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+      // Guard against a hung upload (e.g. blocked by a browser extension, antivirus
+      // "web shield", or a network filter) leaving the guest stuck forever with a
+      // disabled checkbox and no way to finish their RSVP. If nothing comes back
+      // within 20s, surface a clear, retryable error instead of spinning forever.
+      var myToken = {};
+      fileInput._uploadToken = myToken;
+      var timer = setTimeout(function(){
+        if(fileInput._uploadToken !== myToken) return;
+        statusEl.className = 'upload-status err';
+        statusEl.textContent = "Still stuck after 20s — this can happen if a browser extension, antivirus, or network filter is blocking the upload. Try a different browser or network, then choose the photo again to retry.";
+      }, 20000);
+      sb.storage.from('id-photos').upload(path, file, {upsert:false}).then(function(res){
+        clearTimeout(timer);
+        if(fileInput._uploadToken !== myToken) return; // superseded by a newer file selection
+        if(res.error){
+          statusEl.className = 'upload-status err';
+          statusEl.textContent = "Couldn't upload — try a different photo.";
+          return;
+        }
+        statusEl.className = 'upload-status ok';
+        statusEl.textContent = 'Uploaded ✓ — confirm below.';
+        setPath(path);
+        checkbox.disabled = false;
+        updateReady();
+      }).catch(function(){
+        clearTimeout(timer);
+        if(fileInput._uploadToken !== myToken) return;
+        statusEl.className = 'upload-status err';
+        statusEl.textContent = "Couldn't upload — try a different photo.";
+      });
+    });
+  }
+
+  // ---- RSVP form wiring ----
+  var sendBtn = document.getElementById('g-send');
+  var rsvpSel = document.getElementById('g-rsvp');
+  var idWrap = document.getElementById('g-id-wrap');
+  var passportWrap = document.getElementById('g-passport-wrap');
+  var signBlock = document.getElementById('g-sign-block');
+  var poWrap = document.getElementById('g-po-wrap');
+  var poCountSel = document.getElementById('g-po-count');
+  var poBlocks = document.getElementById('g-po-blocks');
+  var gIdPhotoPath = null;
+  var gPassportPhotoPath = null;
+
+  wireIdUpload(
+    document.getElementById('g-idfile'),
+    document.getElementById('g-idstatus'),
+    document.getElementById('g-idphoto'),
+    function(){ return gIdPhotoPath; },
+    function(p){ gIdPhotoPath = p; }
+  );
+  wireIdUpload(
+    document.getElementById('g-passfile'),
+    document.getElementById('g-passstatus'),
+    document.getElementById('g-passphoto'),
+    function(){ return gPassportPhotoPath; },
+    function(p){ gPassportPhotoPath = p; }
+  );
+
+  function buildPlusOneBlock(i){
+    var wrap = document.createElement('div');
+    wrap.className = 'plusone-block';
+    wrap._idPhotoPath = null;
+    wrap._passportPhotoPath = null;
+    wrap._deferred = false;
+    var reqPassport = !!(trip && trip.require_passport);
+    var relOptions = RELATIONSHIPS.map(function(r){ return '<option value="' + r + '">' + (r || '—') + '</option>'; }).join('');
+    wrap.innerHTML =
+      '<h5>Plus-one ' + (i+1) + '</h5>' +
+      '<div class="po-mode-toggle" style="display:flex;gap:8px;margin-bottom:12px;">' +
+        '<button type="button" class="po-mode-btn po-mode-fill" data-mode="fill" style="flex:1;padding:8px 10px;font:600 12.5px \'IBM Plex Sans\',sans-serif;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer;">I\'ll fill this out now</button>' +
+        '<button type="button" class="po-mode-btn po-mode-link" data-mode="link" style="flex:1;padding:8px 10px;font:600 12.5px \'IBM Plex Sans\',sans-serif;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);cursor:pointer;">Send them a link</button>' +
+      '</div>' +
+      '<p class="hint po-link-note" hidden style="margin:0 0 8px;">A private link will show up after you submit — text or email it to them and they\'ll fill out their own info.</p>' +
+      '<div class="po-fields">' +
+      '<div class="field-grid">' +
+        '<div class="field"><label>Name *</label><input class="po-name" type="text"></div>' +
+        '<div class="field"><label>Relationship *</label><select class="po-rel">' + relOptions + '</select></div>' +
+        '<div class="field po-rel-other-field" hidden><label>Relationship (specify)</label><input class="po-rel-other" type="text" placeholder="e.g. college roommate"></div>' +
+        '<div class="field"><label>Gender *</label><select class="po-gender"><option value="" selected disabled>Choose one…</option><option value="Male">Male</option><option value="Female">Female</option></select></div>' +
+        '<div class="field"><label>Birthday</label><input class="po-birthday" type="date"></div>' +
+        '<div class="field"><label>Email</label><input class="po-email" type="email"></div>' +
+        '<div class="field"><label>Phone</label><input class="po-phone" type="tel"></div>' +
+        '<div class="field"><label>Allergies / medications</label><input class="po-allergies" type="text"></div>' +
+        '<div class="field wide"><label>Legal name as it appears on their ID *</label><input class="po-idname" type="text"></div>' +
+        '<div class="field wide"><label>Upload a photo of their ID *</label><input class="po-idfile" type="file" accept="image/*"></div>' +
+      '</div>' +
+      '<p class="upload-status po-idstatus" hidden></p>' +
+      '<label class="id-check"><input type="checkbox" class="po-idphoto" disabled> Confirmed — this is a current, valid photo ID *</label>' +
+      (reqPassport ?
+        '<div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border);">' +
+          '<p class="hint" style="margin:0 0 8px;">This trip also requires a passport for plus-ones.</p>' +
+          '<div class="field-grid">' +
+            '<div class="field wide"><label>Upload a photo of their passport *</label><input class="po-passfile" type="file" accept="image/*"></div>' +
+          '</div>' +
+          '<p class="upload-status po-passstatus" hidden></p>' +
+          '<label class="id-check"><input type="checkbox" class="po-passphoto" disabled> Confirmed — this is a current, valid passport *</label>' +
+        '</div>'
+        : '') +
+      '</div>';
+    var modeBtns = wrap.querySelectorAll('.po-mode-btn');
+    var fieldsBlock = wrap.querySelector('.po-fields');
+    var linkNote = wrap.querySelector('.po-link-note');
+    for(var m=0;m<modeBtns.length;m++){
+      modeBtns[m].addEventListener('click', function(e){
+        var mode = e.currentTarget.getAttribute('data-mode');
+        wrap._deferred = (mode === 'link');
+        fieldsBlock.hidden = wrap._deferred;
+        linkNote.hidden = !wrap._deferred;
+        for(var mm=0;mm<modeBtns.length;mm++){
+          var active = modeBtns[mm] === e.currentTarget;
+          modeBtns[mm].style.background = active ? 'var(--accent)' : 'var(--surface)';
+          modeBtns[mm].style.color = active ? 'var(--on-accent)' : 'var(--ink)';
+          modeBtns[mm].style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+        }
+        updateReady();
+      });
+    }
+    var relSel = wrap.querySelector('.po-rel');
+    var relOtherField = wrap.querySelector('.po-rel-other-field');
+    relSel.addEventListener('change', function(){
+      relOtherField.hidden = relSel.value !== 'Other';
+      updateReady();
+    });
+    var inputs = wrap.querySelectorAll('input,select');
+    for(var k=0;k<inputs.length;k++){
+      if(inputs[k].type === 'file') continue;
+      var evt = inputs[k].type === 'checkbox' ? 'change' : 'input';
+      inputs[k].addEventListener(evt, updateReady);
+    }
+    wireIdUpload(
+      wrap.querySelector('.po-idfile'),
+      wrap.querySelector('.po-idstatus'),
+      wrap.querySelector('.po-idphoto'),
+      function(){ return wrap._idPhotoPath; },
+      function(p){ wrap._idPhotoPath = p; }
+    );
+    if(reqPassport){
+      wireIdUpload(
+        wrap.querySelector('.po-passfile'),
+        wrap.querySelector('.po-passstatus'),
+        wrap.querySelector('.po-passphoto'),
+        function(){ return wrap._passportPhotoPath; },
+        function(p){ wrap._passportPhotoPath = p; }
+      );
+    }
+    return wrap;
+  }
+
+  function rebuildPlusOneBlocks(){
+    var count = parseInt(poCountSel.value, 10) || 0;
+    poBlocks.innerHTML = '';
+    for(var i=0;i<count;i++){ poBlocks.appendChild(buildPlusOneBlock(i)); }
+    updateReady();
+  }
+
+  function onRsvpChange(){
+    var isYes = rsvpSel.value === 'Yes';
+    idWrap.hidden = !isYes;
+    passportWrap.hidden = !(isYes && trip && trip.require_passport);
+    signBlock.hidden = !isYes;
+    if(poWrap && trip && trip.plus_one_cap > 0) poWrap.hidden = !isYes;
+    if(!isYes){ poCountSel.value = '0'; rebuildPlusOneBlocks(); }
+    renderDocs();
+    updateReady();
+  }
+
+  function computeReady(){
+    var name = document.getElementById('g-name').value.trim();
+    var rsvp = rsvpSel.value;
+    var gender = document.getElementById('g-gender').value;
+    if(!name || !rsvp || !gender) return false;
+    if(rsvp === 'Yes'){
+      var roleWrap = document.getElementById('g-role-wrap');
+      if(!roleWrap.hidden && document.getElementById('g-role').value === '__unset') return false;
+      if(!document.getElementById('g-idname').value.trim()) return false;
+      if(!gIdPhotoPath || !document.getElementById('g-idphoto').checked) return false;
+
+      if(trip && trip.require_passport){
+        if(!gPassportPhotoPath || !document.getElementById('g-passphoto').checked) return false;
+      }
+
+      var visibleTitles = renderDocs._visibleTitles || [];
+      for(var t=0;t<visibleTitles.length;t++){ if(!docAcked[visibleTitles[t]]) return false; }
+
+      if(!document.getElementById('g-signature').value.trim()) return false;
+      if(!document.getElementById('g-agree').checked) return false;
+
+      var blocks = poBlocks.querySelectorAll('.plusone-block');
+      for(var i=0;i<blocks.length;i++){
+        var b = blocks[i];
+        if(b._deferred) continue; // they'll fill this out themselves via their own link
+        if(!b.querySelector('.po-name').value.trim()) return false;
+        var rel = b.querySelector('.po-rel').value;
+        if(!rel) return false;
+        if(rel === 'Other' && !b.querySelector('.po-rel-other').value.trim()) return false;
+        if(!b.querySelector('.po-gender').value) return false;
+        if(!b.querySelector('.po-idname').value.trim()) return false;
+        if(!b._idPhotoPath || !b.querySelector('.po-idphoto').checked) return false;
+        if(trip && trip.require_passport){
+          var poPassCheck = b.querySelector('.po-passphoto');
+          if(!b._passportPhotoPath || !poPassCheck || !poPassCheck.checked) return false;
+        }
+      }
+    }
+    return true;
+  }
+  function updateReady(){
+    var ready = computeReady();
+    sendBtn.disabled = !ready;
+    sendBtn.classList.toggle('ready', ready);
+  }
+
+  document.getElementById('g-name').addEventListener('input', updateReady);
+  document.getElementById('g-gender').addEventListener('change', updateReady);
+  document.getElementById('g-idname').addEventListener('input', updateReady);
+  document.getElementById('g-idphoto').addEventListener('change', updateReady);
+  document.getElementById('g-passphoto').addEventListener('change', updateReady);
+  document.getElementById('g-signature').addEventListener('input', updateReady);
+  document.getElementById('g-agree').addEventListener('change', updateReady);
+  document.getElementById('g-role').addEventListener('change', function(){ renderDocs(); updateReady(); });
+  rsvpSel.addEventListener('change', onRsvpChange);
+  poCountSel.addEventListener('change', rebuildPlusOneBlocks);
+
+  sendBtn.addEventListener('click', function(){
+    if(!computeReady()){
+      var err = document.getElementById('g-err');
+      err.textContent = 'Fill in everything marked * first — the button lights up once you have.';
+      err.style.display = 'block';
+      return;
+    }
+    document.getElementById('g-err').style.display = 'none';
+    sendBtn.disabled = true;
+
+    var plusOnes = [];
+    var deferredCount = 0;
+    var blocks = poBlocks.querySelectorAll('.plusone-block');
+    for(var i=0;i<blocks.length;i++){
+      var b = blocks[i];
+      if(b._deferred){ deferredCount++; continue; }
+      var rel = b.querySelector('.po-rel').value;
+      var relOther = rel === 'Other' ? b.querySelector('.po-rel-other').value.trim() : '';
+      plusOnes.push({
+        name: b.querySelector('.po-name').value.trim(),
+        relationship: rel,
+        relationship_other: relOther,
+        gender: b.querySelector('.po-gender').value,
+        email: b.querySelector('.po-email').value.trim(),
+        phone: b.querySelector('.po-phone').value.trim(),
+        allergies: b.querySelector('.po-allergies').value.trim(),
+        birthday: b.querySelector('.po-birthday').value || '',
+        id_name: b.querySelector('.po-idname').value.trim(),
+        id_photo_attached: b.querySelector('.po-idphoto').checked,
+        id_type: 'license',
+        id_photo_path: b._idPhotoPath || null,
+        passport_photo_path: (trip && trip.require_passport) ? (b._passportPhotoPath || null) : null
+      });
+    }
+
+    var isYes = rsvpSel.value === 'Yes';
+    var docAcksPayload = isYes ? (renderDocs._visibleTitles || []).filter(function(t){ return docAcked[t]; }) : [];
+
+    sb.rpc('submit_rsvp', {
+      p_trip_id: TRIP_ID,
+      p_name: document.getElementById('g-name').value.trim(),
+      p_phone: document.getElementById('g-phone').value.trim(),
+      p_email: document.getElementById('g-email').value.trim(),
+      p_rsvp: rsvpSel.value,
+      p_allergies: document.getElementById('g-allergies').value.trim(),
+      p_notes: document.getElementById('g-notes').value.trim(),
+      p_id_name: document.getElementById('g-idname').value.trim(),
+      p_id_photo_attached: document.getElementById('g-idphoto').checked,
+      p_plus_ones: plusOnes,
+      p_role: (function(){ var v = document.getElementById('g-role').value; return v === '__unset' ? '' : v; })(),
+      p_id_type: isYes ? 'license' : null,
+      p_id_photo_path: isYes ? gIdPhotoPath : null,
+      p_passport_photo_path: (isYes && trip && trip.require_passport) ? gPassportPhotoPath : null,
+      p_doc_acks: docAcksPayload,
+      p_signature_name: isYes ? document.getElementById('g-signature').value.trim() : null,
+      p_gender: document.getElementById('g-gender').value || null,
+      p_invite_count: isYes ? deferredCount : 0,
+      p_account_id: CURRENT_ACCOUNT_ID,
+      p_birthday: document.getElementById('g-birthday').value || null
+    }).then(function(res){
+      if(res.error){
+        showToast("Something went wrong — try again in a moment");
+        sendBtn.disabled = false;
+        return;
+      }
+      var data = res.data;
+      var ok = document.getElementById('g-ok');
+      if(!data.ok){
+        showToast("Something went wrong — try again in a moment");
+        sendBtn.disabled = false;
+        return;
+      }
+      if(data.status === 'standby'){
+        ok.textContent = "You're on the waitlist — this trip is at capacity. The organizer will reach out if a spot opens up.";
+      } else if(data.status === 'declined'){
+        ok.textContent = "Got it — thanks for letting us know you can't make it.";
+      } else {
+        ok.textContent = "You're confirmed! See you there.";
+      }
+      ok.style.display = 'block';
+      sendBtn.textContent = 'Sent ✓';
+      if(data.invites && data.invites.length){
+        var invHtml = '<h3 class="rsvp-title" style="font-size:16px;margin:18px 0 4px;">Links for your plus-ones</h3>' +
+          '<p class="hint" style="margin:0 0 10px;">Send each link to that person — they\'ll fill out their own info and it\'ll show up under your RSVP.</p>' +
+          data.invites.map(function(inv){
+            var url = window.location.origin + window.location.pathname + '?trip=' + encodeURIComponent(TRIP_ID) + '&po=' + encodeURIComponent(inv.token);
+            return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
+              '<input type="text" readonly value="' + esc(url) + '" style="flex:1;font:12px \'IBM Plex Mono\',monospace;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface-2);color:var(--ink);" onclick="this.select()">' +
+              '<button type="button" class="inv-copy" data-url="' + esc(url) + '" style="flex-shrink:0;padding:8px 12px;font:600 12px \'IBM Plex Sans\',sans-serif;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--ink);cursor:pointer;">Copy</button>' +
+            '</div>';
+          }).join('');
+        var invBox = document.getElementById('g-invites');
+        invBox.innerHTML = invHtml;
+        invBox.hidden = false;
+        invBox.querySelectorAll('.inv-copy').forEach(function(btn){
+          btn.addEventListener('click', function(e){
+            var url = e.currentTarget.getAttribute('data-url');
+            (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function(){
+              showToast('Link copied');
+            }).catch(function(){ showToast('Copy failed — tap the field and copy manually'); });
+          });
+        });
+      }
+      loadTrip(); // refresh live headcount
+      showToast('RSVP saved');
+    }).catch(function(){
+      showToast("Something went wrong — try again in a moment");
+      sendBtn.disabled = false;
+    });
+  });
+
+  // ---- Cancellation ----
+  var cNameEl = document.getElementById('c-name');
+  var cEmailEl = document.getElementById('c-email');
+  var cSendBtn = document.getElementById('c-send');
+  var cBlocked = document.getElementById('c-blocked');
+
+  function hoursUntilTrip(){
+    if(!trip || !trip.start_date) return null;
+    var start = new Date(trip.start_date + 'T00:00:00');
+    if(isNaN(start.getTime())) return null;
+    return (start.getTime() - Date.now()) / 3600000;
+  }
+  function updateCancelGate(){
+    var hrs = hoursUntilTrip();
+    if(hrs !== null && hrs < 48){
+      cBlocked.hidden = false;
+      cBlocked.textContent = "It's inside the 48-hour cancellation window, so this can't be self-served anymore — please reach out to the organizer directly to cancel.";
+      cSendBtn.disabled = true;
+      cSendBtn.classList.remove('ready');
+      cSendBtn.style.display = 'none';
+      return;
+    }
+    cBlocked.hidden = true;
+    cSendBtn.style.display = '';
+    var ready = !!cNameEl.value.trim();
+    cSendBtn.disabled = !ready;
+    cSendBtn.classList.toggle('ready', ready);
+  }
+  cNameEl.addEventListener('input', updateCancelGate);
+  cEmailEl.addEventListener('input', updateCancelGate);
+
+  cSendBtn.addEventListener('click', function(){
+    var name = cNameEl.value.trim();
+    var cErr = document.getElementById('c-err');
+    if(!name){ cErr.textContent = 'Add your name first.'; cErr.style.display = 'block'; return; }
+    cErr.style.display = 'none';
+    cSendBtn.disabled = true;
+    sb.rpc('cancel_rsvp', { p_trip_id: TRIP_ID, p_name: name, p_email: cEmailEl.value.trim() }).then(function(res){
+      if(res.error || !res.data.ok){
+        var errCode = res.data && res.data.error;
+        if(errCode === 'too_late'){
+          cErr.textContent = "It's inside the 48-hour window — please contact the organizer directly.";
+        } else if(errCode === 'not_found'){
+          cErr.textContent = "Couldn't find an RSVP matching that name/email.";
+        } else {
+          cErr.textContent = 'Something went wrong — try again in a moment.';
+        }
+        cErr.style.display = 'block';
+        cSendBtn.disabled = false;
+        return;
+      }
+      showToast('Cancelled — your spot has been freed up');
+      cSendBtn.textContent = 'Cancelled ✓';
+      loadTrip();
+    }).catch(function(){
+      cErr.textContent = 'Something went wrong — try again in a moment.';
+      cErr.style.display = 'block';
+      cSendBtn.disabled = false;
+    });
+  });
+
+  // ---- Plus-one invite mode: a friend opening their own ?po=<token> link ----
+  function renderPlusOneMode(){
+    sb.rpc('get_plus_one_invite', { p_trip_id: TRIP_ID, p_token: PO_TOKEN }).then(function(res){
+      if(res.error || !res.data || !res.data.found){
+        document.getElementById('loading-msg').hidden = true;
+        document.getElementById('notfound-msg').hidden = false;
+        return;
+      }
+      var data = res.data;
+      if(data.claimed){
+        document.getElementById('loading-msg').hidden = true;
+        var nf = document.getElementById('notfound-msg');
+        nf.textContent = "This link has already been used. If that wasn't you, reach out to whoever sent it to you.";
+        nf.hidden = false;
+        return;
+      }
+      buildPlusOneForm(data);
+    }).catch(function(){
+      document.getElementById('loading-msg').hidden = true;
+      document.getElementById('notfound-msg').hidden = false;
+    });
+  }
+
+  function buildPlusOneForm(data){
+    document.getElementById('t-schedule-panel').hidden = true;
+    document.getElementById('t-pack-panel').hidden = true;
+    document.getElementById('t-docs-panel').hidden = true;
+    var mainCard = document.querySelector('.rsvp-card');
+    if(mainCard) mainCard.hidden = true;
+    document.getElementById('g-cancel-block').hidden = true;
+    document.getElementById('t-tiles').innerHTML = '';
+
+    var t = data.trip || {};
+    document.title = (t.name || 'Trip') + ' — RSVP';
+    document.getElementById('t-name').textContent = t.name || 'Trip';
+    if(t.destination){ document.getElementById('t-dest').textContent = t.destination; document.getElementById('t-dest').hidden = false; }
+
+    trip = t; // so docTypeLabel/shared helpers work as-is
+
+    var reqPassport = !!t.require_passport;
+    var docs = (t.documents || []).filter(function(d){ return d.title && (!d.audience || d.audience === 'all'); });
+    var hostName = data.host_name || '';
+
+    var card = document.createElement('div');
+    card.className = 'rsvp-card';
+    card.id = 'po-card';
+    var docsHtml = docs.length
+      ? '<section class="panel" style="margin-top:0;"><h2 class="panel-title" style="font-size:16px;">Documents to review</h2><div class="doc-rows" id="po-docrows"></div></section>'
+      : '';
+
+    card.innerHTML =
+      '<h2 class="rsvp-title">You\'re invited' + (hostName ? ' by ' + esc(hostName) : '') + '</h2>' +
+      '<p class="rsvp-sub">Fill this in and hit Send — it\'s saved instantly under ' + esc(hostName||'their') + '\'s RSVP, no account needed.</p>' +
+      docsHtml +
+      '<div class="field-grid">' +
+        '<div class="field"><label>Your name *</label><input id="po-s-name" type="text" autocomplete="name"></div>' +
+        '<div class="field"><label>Relationship to ' + esc(hostName||'the guest') + ' *</label><select id="po-s-rel">' +
+          RELATIONSHIPS.map(function(r){ return '<option value="'+r+'">'+(r||'—')+'</option>'; }).join('') + '</select></div>' +
+        '<div class="field" id="po-s-rel-other-wrap" hidden><label>Relationship (specify)</label><input id="po-s-rel-other" type="text"></div>' +
+        '<div class="field"><label>Gender *</label><select id="po-s-gender"><option value="" selected disabled>Choose one…</option><option value="Male">Male</option><option value="Female">Female</option></select></div>' +
+        '<div class="field"><label>Birthday</label><input id="po-s-birthday" type="date"></div>' +
+        '<div class="field"><label>Phone</label><input id="po-s-phone" type="tel"></div>' +
+        '<div class="field"><label>Email</label><input id="po-s-email" type="email"></div>' +
+        '<div class="field wide"><label>Allergies / medications</label><input id="po-s-allergies" type="text"></div>' +
+      '</div>' +
+      '<div class="plusone-block id-block">' +
+        '<h5>Your ID</h5>' +
+        '<div class="field-grid">' +
+          '<div class="field wide"><label>Legal name as it appears on your ID *</label><input id="po-s-idname" type="text"></div>' +
+          '<div class="field wide"><label>Upload a photo of your ID *</label><input id="po-s-idfile" type="file" accept="image/*"></div>' +
+        '</div>' +
+        '<p class="upload-status" id="po-s-idstatus" hidden></p>' +
+        '<label class="id-check"><input type="checkbox" id="po-s-idphoto" disabled> I confirm this is a current, valid photo ID *</label>' +
+      '</div>' +
+      (reqPassport ?
+        '<div class="plusone-block id-block">' +
+          '<h5>Your passport</h5>' +
+          '<div class="field-grid"><div class="field wide"><label>Upload a photo of your passport *</label><input id="po-s-passfile" type="file" accept="image/*"></div></div>' +
+          '<p class="upload-status" id="po-s-passstatus" hidden></p>' +
+          '<label class="id-check"><input type="checkbox" id="po-s-passphoto" disabled> I confirm this is a current, valid passport *</label>' +
+        '</div>' : '') +
+      '<div class="sign-block">' +
+        '<div class="field wide"><label>Printed name (this is your signature) *</label><input id="po-s-signature" type="text"></div>' +
+        '<label class="id-check"><input type="checkbox" id="po-s-agree"> By checking this box, I confirm I have read and agree to all of the documents listed above, that all information I\'ve provided here is accurate and true, and that my printed name above is my legal signature. *</label>' +
+      '</div>' +
+      '<p class="err" id="po-s-err"></p>' +
+      '<p class="ok-msg" id="po-s-ok"></p>' +
+      '<button class="send-btn gated" type="button" id="po-s-send" disabled>Send</button>';
+
+    document.getElementById('page').appendChild(card);
+
+    var docOpenedPO = {}, docAckedPO = {};
+    function renderPODocs(){
+      if(!docs.length) return;
+      var rows = docs.map(function(d){
+        var tag = docTypeLabel(d);
+        var tagHtml = tag ? '<span class="doc-tag">' + esc(tag) + '</span> ' : '';
+        var opened = !!docOpenedPO[d.title];
+        var acked = !!docAckedPO[d.title];
+        var linkHtml = d.url
+          ? '<a class="doc-chip" href="' + esc(d.url) + '" target="_blank" rel="noopener" data-po-doc-link="' + esc(d.title) + '">' + tagHtml + esc(d.title) + ' ↗</a>'
+          : '<span class="doc-chip">' + tagHtml + esc(d.title) + '</span>';
+        return '<div class="doc-row">' + linkHtml +
+          '<label class="doc-check"><input type="checkbox" class="po-doc-ack" data-po-doc-ack="' + esc(d.title) + '" ' + (opened?'':'disabled') + ' ' + (acked?'checked':'') + '> Read and agree *</label></div>';
+      }).join('');
+      document.getElementById('po-docrows').innerHTML = rows;
+    }
+    renderPODocs();
+    card.addEventListener('click', function(e){
+      var link = e.target.closest('[data-po-doc-link]');
+      if(!link) return;
+      var title = link.getAttribute('data-po-doc-link');
+      docOpenedPO[title] = true;
+      var cb = card.querySelector('[data-po-doc-ack="' + CSS.escape(title) + '"]');
+      if(cb) cb.disabled = false;
+    });
+    card.addEventListener('change', function(e){
+      var cb = e.target.closest('[data-po-doc-ack]');
+      if(cb){ docAckedPO[cb.getAttribute('data-po-doc-ack')] = cb.checked; updatePOReady(); }
+    });
+
+    var poIdPath = null, poPassPath = null;
+    wireIdUpload(document.getElementById('po-s-idfile'), document.getElementById('po-s-idstatus'), document.getElementById('po-s-idphoto'),
+      function(){ return poIdPath; }, function(p){ poIdPath = p; updatePOReady(); });
+    if(reqPassport){
+      wireIdUpload(document.getElementById('po-s-passfile'), document.getElementById('po-s-passstatus'), document.getElementById('po-s-passphoto'),
+        function(){ return poPassPath; }, function(p){ poPassPath = p; updatePOReady(); });
+    }
+
+    var relSelPO = document.getElementById('po-s-rel');
+    relSelPO.addEventListener('change', function(){
+      document.getElementById('po-s-rel-other-wrap').hidden = relSelPO.value !== 'Other';
+      updatePOReady();
+    });
+
+    var sendBtnPO = document.getElementById('po-s-send');
+    function computePOReady(){
+      if(!document.getElementById('po-s-name').value.trim()) return false;
+      if(!relSelPO.value) return false;
+      if(relSelPO.value === 'Other' && !document.getElementById('po-s-rel-other').value.trim()) return false;
+      if(!document.getElementById('po-s-gender').value) return false;
+      if(!document.getElementById('po-s-idname').value.trim()) return false;
+      if(!poIdPath || !document.getElementById('po-s-idphoto').checked) return false;
+      if(reqPassport && (!poPassPath || !document.getElementById('po-s-passphoto').checked)) return false;
+      for(var i=0;i<docs.length;i++){ if(!docAckedPO[docs[i].title]) return false; }
+      if(!document.getElementById('po-s-signature').value.trim()) return false;
+      if(!document.getElementById('po-s-agree').checked) return false;
+      return true;
+    }
+    function updatePOReady(){
+      var ready = computePOReady();
+      sendBtnPO.disabled = !ready;
+      sendBtnPO.classList.toggle('ready', ready);
+    }
+    Array.prototype.forEach.call(card.querySelectorAll('input,select'), function(el){
+      if(el.type === 'file') return;
+      el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updatePOReady);
+    });
+
+    sendBtnPO.addEventListener('click', function(){
+      if(!computePOReady()){
+        var err = document.getElementById('po-s-err');
+        err.textContent = 'Fill in everything marked * first.';
+        err.style.display = 'block';
+        return;
+      }
+      document.getElementById('po-s-err').style.display = 'none';
+      sendBtnPO.disabled = true;
+      var rel = relSelPO.value;
+      sb.rpc('submit_plus_one', {
+        p_trip_id: TRIP_ID, p_token: PO_TOKEN,
+        p_name: document.getElementById('po-s-name').value.trim(),
+        p_relationship: rel,
+        p_relationship_other: rel === 'Other' ? document.getElementById('po-s-rel-other').value.trim() : '',
+        p_email: document.getElementById('po-s-email').value.trim(),
+        p_phone: document.getElementById('po-s-phone').value.trim(),
+        p_allergies: document.getElementById('po-s-allergies').value.trim(),
+        p_gender: document.getElementById('po-s-gender').value,
+        p_birthday: document.getElementById('po-s-birthday').value || null,
+        p_id_name: document.getElementById('po-s-idname').value.trim(),
+        p_id_type: 'license',
+        p_id_photo_path: poIdPath,
+        p_passport_photo_path: reqPassport ? poPassPath : null,
+        p_id_photo_attached: document.getElementById('po-s-idphoto').checked,
+        p_doc_acks: docs.filter(function(d){ return docAckedPO[d.title]; }).map(function(d){ return d.title; })
+      }).then(function(res){
+        if(res.error || !res.data || !res.data.ok){
+          var errCode = res.data && res.data.error;
+          var err = document.getElementById('po-s-err');
+          err.textContent = errCode === 'already_claimed' ? "This link has already been used." : "Something went wrong — try again in a moment.";
+          err.style.display = 'block';
+          sendBtnPO.disabled = false;
+          return;
+        }
+        var ok = document.getElementById('po-s-ok');
+        ok.textContent = "You're confirmed! See you there.";
+        ok.style.display = 'block';
+        sendBtnPO.textContent = 'Sent ✓';
+        showToast('Saved');
+      }).catch(function(){
+        var err = document.getElementById('po-s-err');
+        err.textContent = 'Something went wrong — try again in a moment.';
+        err.style.display = 'block';
+        sendBtnPO.disabled = false;
+      });
+    });
+
+    document.getElementById('loading-msg').hidden = true;
+    document.getElementById('page').hidden = false;
+  }
+
+  // Shared by the role-access view: the full schedule, confirmed/paid
+  // included — guests never see this (their copy is filtered to
+  // visibleToGuests rows with no confirmed/paid at all).
+  function scheduleRowBadges(s){
+    var badges = '';
+    if(s.confirmed) badges += ' <span class="doc-tag" style="background:var(--teal);">Confirmed</span>';
+    if(s.paid) badges += ' <span class="doc-tag" style="background:var(--accent);">Paid</span>';
+    return badges;
+  }
+  function buildFullScheduleHtml(fullDays){
+    var days = (fullDays||[]).filter(function(d){
+      return d.date || d.goal || (d.schedule||[]).some(function(s){ return s.time || s.activity; });
+    });
+    if(!days.length) return '';
+    return days.map(function(d, i){
+      var rows = (d.schedule||[]).filter(function(s){ return s.time || s.activity; }).map(function(s){
+        var content = s.content ? '<span class="sched-content"> — ' + esc(s.content) + '</span>' : '';
+        var notes = s.notes ? '<div class="admin-meta">' + esc(s.notes) + '</div>' : '';
+        return '<div class="sched-row" style="flex-direction:column;align-items:flex-start;gap:2px;">' +
+          '<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;">' +
+            '<span class="sched-time">' + esc(s.time||'—') + '</span>' +
+            '<span class="sched-activity">' + esc(s.activity||'') + content + '</span>' +
+            scheduleRowBadges(s) +
+          '</div>' + notes +
+        '</div>';
+      }).join('');
+      var head = 'Day ' + (i+1) + (d.date ? ' — ' + esc(fmtDate(d.date)) : '') + (d.goal ? ' · ' + esc(d.goal) : '');
+      return '<div class="day-block"><div class="day-head">' + head + '</div>' + rows + '</div>';
+    }).join('');
+  }
+  // Shared by the role-access view: a guest-list block with RSVP status,
+  // contact info, and plus-ones.
+  function buildGuestListHtml(guests){
+    return guests.length ? guests.map(function(g){
+      var contact = [g.phone, g.email].filter(Boolean).map(esc).join(' · ');
+      var status = esc(g.rsvp || g.status || '—');
+      var meta = [g.role, g.gender].filter(Boolean).map(esc).join(' · ');
+      var poHtml = (g.plus_ones||[]).map(function(p){
+        var pMeta = [p.relationship === 'Other' ? p.relationship_other : p.relationship, p.gender].filter(Boolean).map(esc).join(' · ');
+        var pContact = [p.phone, p.email].filter(Boolean).map(esc).join(' · ');
+        return '<div class="admin-po-row">+1 — ' + esc(p.name||'Unnamed') + (pMeta ? ' <span class="admin-meta">(' + pMeta + ')</span>' : '') + (pContact ? '<br><span class="admin-meta">' + pContact + '</span>' : '') + '</div>';
+      }).join('');
+      return '<div class="doc-row admin-guest-row">' +
+        '<div class="admin-guest-head"><strong>' + esc(g.name||'Unnamed') + '</strong><span class="doc-tag" style="background:var(--teal);">' + status + '</span></div>' +
+        (meta ? '<div class="admin-meta">' + meta + '</div>' : '') +
+        (contact ? '<div class="admin-meta">' + contact + '</div>' : '') +
+        poHtml +
+        '</div>';
+    }).join('') : '<p class="hint" style="margin:0;">No RSVPs yet.</p>';
+  }
+
+  // ---- Role access: instead of a separate admin link, anyone the
+  // organizer has added as an Admin (in Waypoint) unlocks it right here by
+  // entering the phone or email the organizer has on file for them. No
+  // code to copy, no code to send. Collaborators and editors aren't a
+  // special access tier — they RSVP like any other guest and just carry a
+  // crew role tag, so they never hit this view. ----
+  var ROLE_ACCESS_KEY = TRIP_ID ? ('waypoint_role_' + TRIP_ID) : '';
+
+  // ---- Account settings: change the email/password used to sign in.
+  // Shared between the regular guest view and the Crew/Admin/Owner view —
+  // everyone with an account can update their own login this way. This is
+  // separate from "Edit your info" (name/phone/allergies etc., stored on
+  // the guest record) — this changes the actual sign-in credentials via
+  // Supabase Auth. ----
+  function buildAccountSettingsBlock(container){
+    container.innerHTML =
+      '<h2 class="panel-title" style="font-size:16px;">Account</h2>' +
+      '<p class="hint" style="margin:0 0 12px;">Change the email or password you sign in with' + (CURRENT_EMAIL ? ' (currently ' + esc(CURRENT_EMAIL) + ')' : '') + '.</p>' +
+      '<div class="field-grid">' +
+        '<div class="field wide"><label>New email</label><input id="acct-email" type="email" autocomplete="email"></div>' +
+        '<div class="field wide"><label>New password</label><input id="acct-password" type="password" autocomplete="new-password" placeholder="Leave blank to keep current"></div>' +
+      '</div>' +
+      '<p class="err" id="acct-err"></p>' +
+      '<p class="ok-msg" id="acct-ok"></p>' +
+      '<button class="send-btn always-enabled" type="button" id="acct-save" style="max-width:180px;margin-top:6px;">Update account</button>';
+    var errEl = container.querySelector('#acct-err');
+    var okEl = container.querySelector('#acct-ok');
+    var saveBtn = container.querySelector('#acct-save');
+    saveBtn.addEventListener('click', function(){
+      var email = container.querySelector('#acct-email').value.trim();
+      var pw = container.querySelector('#acct-password').value;
+      okEl.style.display = 'none';
+      if(!email && !pw){ errEl.textContent = 'Enter a new email or password first.'; errEl.style.display = 'block'; return; }
+      if(pw && pw.length < 6){ errEl.textContent = 'Password should be at least 6 characters.'; errEl.style.display = 'block'; return; }
+      var payload = {};
+      if(email) payload.email = email;
+      if(pw) payload.password = pw;
+      errEl.style.display = 'none'; saveBtn.disabled = true;
+      sb.auth.updateUser(payload).then(function(res){
+        saveBtn.disabled = false;
+        if(res.error){ errEl.textContent = res.error.message || "Couldn't update your account."; errEl.style.display = 'block'; return; }
+        okEl.textContent = email ? 'Check your new email to confirm the change.' : 'Password updated.';
+        okEl.style.display = 'block';
+        container.querySelector('#acct-password').value = '';
+        container.querySelector('#acct-email').value = '';
+        if(email) CURRENT_EMAIL = email;
+      }).catch(function(){ saveBtn.disabled = false; errEl.textContent = 'Something went wrong — try again.'; errEl.style.display = 'block'; });
+    });
+  }
+
+  // ---- Crew / Admin / Owner view. What each level sees:
+  //  - Crew: full day-by-day schedule + every document (not just ones
+  //    tagged for a guest's chosen role) — no guest list, no budget.
+  //  - Admin / Owner: everything Crew sees, plus the guest list and budget.
+  // "Owner" is just you (the organizer) recognized automatically via your
+  // own sign-in email — see ensureOwnerRole in Waypoint. It sees the same
+  // as Admin; the separate label is so a team page can tell who's who. ----
+  function buildRoleView(data){
+    document.querySelectorAll('.role-injected').forEach(function(el){ el.remove(); });
+    document.getElementById('t-schedule-panel').hidden = true;
+    document.getElementById('t-pack-panel').hidden = true;
+    document.getElementById('t-docs-panel').hidden = true;
+    document.getElementById('role-access-box').hidden = true;
+    var mainCard = document.querySelector('.rsvp-card');
+    if(mainCard) mainCard.hidden = true;
+    var cancelBlock = document.getElementById('g-cancel-block');
+    if(cancelBlock) cancelBlock.hidden = true;
+
+    var t = data.trip || {};
+    var guests = data.guests || [];
+    var level = data.role === 'owner' ? 'owner' : data.role === 'admin' ? 'admin' : 'crew';
+    var levelLabel = level === 'owner' ? 'Owner' : level === 'admin' ? 'Admin' : 'Crew';
+    document.title = (t.name || 'Trip') + ' — ' + levelLabel + ' view';
+    document.getElementById('page-eyebrow').textContent = levelLabel + ' access';
+    document.getElementById('t-name').textContent = t.name || 'Untitled Trip';
+    if(t.destination){ document.getElementById('t-dest').textContent = t.destination; document.getElementById('t-dest').hidden = false; }
+
+    var dateRange = fmtDate(t.start_date);
+    if(t.end_date && t.end_date !== t.start_date) dateRange += ' – ' + fmtDate(t.end_date);
+    var confirmed = guests.filter(function(g){ return g.rsvp === 'Yes' || g.status === 'confirmed'; }).length;
+    var totalHeads = guests.reduce(function(n, g){ return n + 1 + (g.plus_ones||[]).length; }, 0);
+    var tiles = [];
+    if(dateRange) tiles.push(['Dates', esc(dateRange)]);
+    if(t.meeting_point) tiles.push(['Meeting point', esc(t.meeting_point)]);
+    if(t.poc){ tiles.push(['Point of contact', esc(t.poc) + (t.poc_phone ? ' · ' + esc(t.poc_phone) : '')]); }
+    if(level === 'admin' || level === 'owner'){
+      tiles.push(['RSVPs', confirmed + ' confirmed of ' + guests.length + (t.headcount_cap ? ' (cap ' + t.headcount_cap + ')' : '')]);
+      tiles.push(['Total headcount', String(totalHeads) + (totalHeads===1?' person':' people')]);
+    }
+    if(!t.is_active) tiles.push(['Status', '<span style="color:var(--danger);">RSVPs closed</span>', true]);
+    var tilesHtml = tiles.map(function(row){
+      var raw = row[2];
+      var value = raw ? row[1] : '<span class="tile-value">' + row[1] + '</span>';
+      return '<div class="tile"><div class="tile-label">' + esc(row[0]) + '</div>' + value + '</div>';
+    }).join('');
+    document.getElementById('t-tiles').innerHTML = tilesHtml;
+
+    var scheduleHtml = buildFullScheduleHtml(t.full_days);
+    if(scheduleHtml){
+      var schedSection = document.createElement('section');
+      schedSection.className = 'panel role-injected';
+      schedSection.innerHTML = '<h2 class="panel-title" style="font-size:16px;">Schedule</h2><div class="days">' + scheduleHtml + '</div>';
+      document.getElementById('page').appendChild(schedSection);
+    }
+
+    // Every document, regardless of audience tag — staff aren't picking a
+    // crew-role tag to filter by like guests do, they see the whole list.
+    var docs = (t.documents || []).filter(function(d){ return d.title; });
+    if(docs.length){
+      var docSection = document.createElement('section');
+      docSection.className = 'panel role-injected';
+      docSection.innerHTML = '<h2 class="panel-title" style="font-size:16px;">Documents</h2><div class="doc-links">' +
+        docs.map(function(d){
+          var tag = docTypeLabel(d);
+          var tagHtml = tag ? '<span class="doc-tag">' + esc(tag) + '</span> ' : '';
+          return d.url
+            ? '<a class="doc-chip" href="' + esc(d.url) + '" target="_blank" rel="noopener">' + tagHtml + esc(d.title) + ' ↗</a>'
+            : '<span class="doc-chip">' + tagHtml + esc(d.title) + '</span>';
+        }).join('') + '</div>';
+      document.getElementById('page').appendChild(docSection);
+    }
+
+    if(level === 'admin' || level === 'owner'){
+      var guestSection = document.createElement('section');
+      guestSection.className = 'panel role-injected';
+      guestSection.innerHTML = '<h2 class="panel-title" style="font-size:16px;">Guest list</h2><div class="doc-rows">' + buildGuestListHtml(guests) + '</div>';
+      document.getElementById('page').appendChild(guestSection);
+
+      var budgetRows = (t.budget_rows || []).filter(function(r){ return r.expense; });
+      if(budgetRows.length){
+        var spent = 0, budgeted = 0;
+        var rowsHtml = budgetRows.map(function(r){
+          spent += Number(r.actual)||0; budgeted += Number(r.budgeted)||0;
+          var amt = Number(r.actual) || Number(r.budgeted) || 0;
+          return '<div class="doc-row admin-guest-row"><div><strong>' + esc(r.expense) + '</strong>' +
+            '<span class="admin-meta"> · ' + esc(r.category||'Misc') + (r.companyCovered ? ' · company-covered' : '') + '</span></div>' +
+            '<span class="doc-tag" style="background:var(--teal);">$' + amt.toLocaleString() + '</span></div>';
+        }).join('');
+        var budgetSection = document.createElement('section');
+        budgetSection.className = 'panel role-injected';
+        budgetSection.innerHTML = '<h2 class="panel-title" style="font-size:16px;">Budget</h2>' +
+          '<p class="hint" style="margin:0 0 10px;">Budgeted: $' + budgeted.toLocaleString() + ' · Actual so far: $' + spent.toLocaleString() + '</p>' +
+          '<div class="doc-rows">' + rowsHtml + '</div>';
+        document.getElementById('page').appendChild(budgetSection);
+      }
+    }
+
+    var acctSection = document.createElement('section');
+    acctSection.className = 'panel role-injected';
+    document.getElementById('page').appendChild(acctSection);
+    buildAccountSettingsBlock(acctSection);
+
+    document.getElementById('loading-msg').hidden = true;
+    document.getElementById('page').hidden = false;
+  }
+
+  // identifier: whatever the visitor typed (phone or email). opts.silent
+  // is implied when opts.fallback is set (used for the automatic
+  // localStorage recheck) — no on-page error, just fall back to the
+  // normal guest flow instead of getting stuck.
+  function tryRoleAccess(identifier, opts){
+    opts = opts || {};
+    if(!identifier || !identifier.trim()){ if(opts.fallback) opts.fallback(); return; }
+    sb.rpc('get_my_access', { p_trip_id: TRIP_ID, p_identifier: identifier.trim() }).then(function(res){
+      if(res.error || !res.data || !res.data.ok){
+        if(ROLE_ACCESS_KEY){ try{ localStorage.removeItem(ROLE_ACCESS_KEY); }catch(e){} }
+        if(opts.fallback){ opts.fallback(); return; }
+        var err = document.getElementById('role-access-err');
+        if(err) err.hidden = false;
+        var btn = document.getElementById('role-access-submit');
+        if(btn) btn.disabled = false;
+        return;
+      }
+      if(ROLE_ACCESS_KEY){ try{ localStorage.setItem(ROLE_ACCESS_KEY, identifier.trim()); }catch(e){} }
+      buildRoleView(res.data);
+    }).catch(function(){
+      if(opts.fallback){ opts.fallback(); return; }
+      var err = document.getElementById('role-access-err');
+      if(err) err.hidden = false;
+      var btn = document.getElementById('role-access-submit');
+      if(btn) btn.disabled = false;
+    });
+  }
+
+  (function initRoleAccessBox(){
+    var toggle = document.getElementById('role-access-toggle');
+    var form = document.getElementById('role-access-form');
+    var input = document.getElementById('role-access-input');
+    var submit = document.getElementById('role-access-submit');
+    var err = document.getElementById('role-access-err');
+    if(!toggle || !form || !input || !submit) return;
+    toggle.addEventListener('click', function(){
+      form.hidden = false;
+      toggle.hidden = true;
+      input.focus();
+    });
+    var submitHandler = function(){
+      err.hidden = true;
+      submit.disabled = true;
+      tryRoleAccess(input.value, {});
+    };
+    submit.addEventListener('click', submitHandler);
+    input.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); submitHandler(); } });
+  })();
+
+
+  // ---- Load trip (live) ----
+  function loadTrip(){
+    sb.rpc('get_trip_status', { p_trip_id: TRIP_ID }).then(function(res){
+      if(res.error || !res.data || !res.data.ok){
+        document.getElementById('loading-msg').hidden = true;
+        document.getElementById('notfound-msg').hidden = false;
+        return;
+      }
+      renderTrip(res.data);
+    }).catch(function(){
+      document.getElementById('loading-msg').hidden = true;
+      document.getElementById('notfound-msg').hidden = false;
+    });
+  }
+
+  // Every trip page now sits fully behind sign-in — nothing about the
+  // trip (schedule, documents, packing list, the RSVP form, or the admin
+  // view) loads until an account is attached. Creating a NEW account also
+  // requires that trip's password (set by the organizer in Waypoint and
+  // shared separately from the link), so having the link alone is no
+  // longer enough to spin up an account and look around — only someone
+  // who was actually given both can. Signing in to an EXISTING account
+  // never needs the trip password.
+  function initTripPageGate(){
+    document.getElementById('loading-msg').hidden = true;
+    sb.auth.getSession().then(function(res){
+      var session = res.data && res.data.session;
+      if(session){ afterAuthed(session); loadTrip(); return; }
+      showTripAuthGate();
+    }).catch(function(){ showTripAuthGate(); });
+  }
+  function showTripAuthGate(){
+    var gate = document.getElementById('auth-gate');
+    var h1 = gate.querySelector('h1');
+    var sub = gate.querySelector('.dest');
+    if(h1) h1.textContent = 'Sign in to continue';
+    if(sub) sub.textContent = "This trip's details are private to people who've been invited.";
+    gate.hidden = false;
+    buildAuthForm(document.getElementById('auth-gate-body'), {
+      prefix: 'trip-auth',
+      requirePasscode: true,
+      tripId: TRIP_ID,
+      hint: "Sign in if you already have an account, or create one — you'll need the trip password whoever invited you gave you, separately from this link.",
+      onSuccess: function(session){
+        afterAuthed(session);
+        gate.hidden = true;
+        loadTrip();
+      }
+    });
+  }
+
+  if(!TRIP_ID){
+    // Bare visit, no invite link: this is the homepage entry — sign in
+    // first, then show only trips this account is already tied to. New
+    // accounts aren't created here (there's no trip to attach a password
+    // check to) — only from inside a specific trip's invite link.
+    document.getElementById('loading-msg').hidden = true;
+    sb.auth.getSession().then(function(res){
+      var session = res.data && res.data.session;
+      if(session){ afterAuthed(session); renderHomepage(); return; }
+      var gate = document.getElementById('auth-gate');
+      gate.hidden = false;
+      buildAuthForm(document.getElementById('auth-gate-body'), {
+        prefix: 'home-auth',
+        hideSignup: true,
+        hint: "Sign in to see your trips. New here? Open the invite link you were sent — that's where you create your account.",
+        onSuccess: function(session2){
+          afterAuthed(session2);
+          gate.hidden = true;
+          renderHomepage();
+        }
+      });
+    });
+  } else if(PO_TOKEN){
+    renderPlusOneMode();
+  } else {
+    initTripPageGate();
+  }
+})();
+</script>
+</body>
+</html>
